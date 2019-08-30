@@ -5,12 +5,12 @@ RUN unzip /go-server.zip \
  && tar czf /go-server.tar.gz go-server -C /
 
 FROM bcit/alpine:3.9
-
-LABEL maintainer="jesse_weisner@bcit.ca" \
-      gocd.version="19.5.0" \
-      description="GoCD server based on alpine version 3.9" \
-      url="https://www.gocd.org" \
-      gocd.full.version="19.5.0-9272"
+LABEL maintainer="jesse@weisner.ca"
+LABEL gocd.version="19.5.0"
+LABEL description="GoCD server based on alpine version 3.9"
+LABEL url="https://www.gocd.org"
+LABEL gocd.full.version="19.5.0-9272"
+LABEL build_id="1567195587"
 
 ENV RUNUSER go
 ENV FULLVERSION 19.5.0-9272

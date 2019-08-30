@@ -1,0 +1,15 @@
+---
+image_name: openshift-gocd-server
+labels:
+  maintainer: 'jesse@weisner.ca'
+  gocd.version: '19.5.0'
+  description: 'GoCD server based on alpine version 3.9'
+  url: 'https://www.gocd.org'
+  gocd.full.version: '19.5.0-9272'
+suffixes:
+  - '19.5.0'
+  - '19.5.0-latest'
+  - '19.5.0-9272'
+vars:
+  gocd_full_version: '19.5.0-9272'
+  gocd_version: '19.5.0'

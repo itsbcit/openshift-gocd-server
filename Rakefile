@@ -1,60 +1,61 @@
-require "erb"
+# frozen_string_literal: true
 
-# @ripienaar https://www.devco.net/archives/2010/11/18/a_few_rake_tips.php
-def render_template(template, output, scope)
-  tmpl = File.read(template)
-  erb = ERB.new(tmpl, 0, "<>")
-  File.open(output, "w") do |f|
-    f.puts erb.result(scope)
+require 'erb'
+require 'fileutils'
+require 'tempfile'
+require 'yaml'
+require 'open-uri'
+
+Dir.glob('lib/*.rb').each { |l| load l unless File.exist?("local/#{l[4..-1]}") } if Dir.exist?('lib')
+Dir.glob('local/*.rb').each { |l| load l } if Dir.exist?('local')
+
+if File.exist?('metadata.yaml')
+  local_metadata = YAML.safe_load(File.read('metadata.yaml'))
+else
+  puts('WARNING: metadata.yaml not found.')
+  local_metadata = {}
+end
+
+puts('WARNING: Rakefile library not found.') unless File.exist?('lib')
+
+if File.exist?('lib/metadata-defaults.yaml')
+  default_metadata = YAML.safe_load(File.read('lib/metadata-defaults.yaml'))
+else
+  puts('WARNING: metadata defaults not found.')
+  default_metadata = {}
+end
+
+$metadata = default_metadata.merge(local_metadata)
+
+if File.exist?('metadata.yaml') && File.exist?('lib')
+  $images = build_objects_array(
+    metadata: $metadata,
+    build_id: build_timestamp
+  )
+end
+
+desc 'Install Rakefile support files'
+task :install do
+  open('https://github.com/itsbcit/docker-rakefile/releases/latest/download/lib.zip') do |archive|
+    FileUtils.remove_entry('lib') if File.exist?('lib')
+    tempfile = Tempfile.new(['lib', '.zip'])
+    File.open(tempfile.path, 'wb') do |f|
+      f.write(archive.read)
+    end
+    system('unzip', tempfile.path)
+    tempfile.unlink
   end
 end
 
-maintainer       = 'jesse_weisner@bcit.ca'
-org_name         = 'bcit'
-image_name       = 'openshift-gocd-server'
-version          = '19.5.0'
-full_version     = '19.5.0-9272'
-version_segments = version.split('.')
-tags = [
-  'latest'
-]
-
-desc "Template, build, tag, push"
-task :default do
-  Rake::Task[:Dockerfile].invoke
-  Rake::Task[:build].invoke
-  Rake::Task[:test].invoke
-  Rake::Task[:tag].invoke
-end
-
-desc "Update Dockerfile templates"
-task :Dockerfile do
-  render_template("Dockerfile.erb", "Dockerfile", binding)
-end
-
-desc "Build docker images"
-task :build do
-  sh "docker build -t #{org_name}/#{image_name}:#{version} . --no-cache --pull"
-end
-
-desc "Test docker images"
-task :test do
-  puts "Running tests on #{org_name}/#{image_name}:#{version}"
-  puts "lol"
-end
-
-desc "Tag docker images"
-task :tag do
-  tags.each do |tag|
-    sh "docker tag #{org_name}/#{image_name}:#{version} #{org_name}/#{image_name}:#{tag}"
+desc 'Update Rakefile to latest release version'
+task :update do
+  Rake::Task[:install].invoke
+  open('https://github.com/itsbcit/docker-rakefile/releases/latest/download/Rakefile') do |rakefile|
+    File.open('Rakefile', 'wb') do |f|
+      f.write(rakefile.read)
+    end
   end
 end
 
-desc "Push to Docker Hub"
-task :push do
-  sh "docker push #{org_name}/#{image_name}:#{version}"
-
-  tags.each do |tag|
-    sh "docker push #{org_name}/#{image_name}:#{tag}"
-  end
-end
+Dir.glob('lib/tasks/*.rake').each { |l| load l unless File.exist?("local/tasks/#{l[10..-1]}") } if Dir.exist?('lib/tasks')
+Dir.glob('local/tasks/*.rake').each { |l| load l } if Dir.exist?('local/tasks')

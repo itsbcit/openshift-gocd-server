@@ -1,19 +1,14 @@
 FROM bcit/alpine:3.9 as gocd-server-tarball
-ADD https://download.gocd.org/binaries/<%= full_version %>/generic/go-server-<%= full_version %>.zip /go-server.zip
+ADD https://download.gocd.org/binaries/<%= image.vars['gocd_full_version'] %>/generic/go-server-<%= image.vars['gocd_full_version'] %>.zip /go-server.zip
 RUN unzip /go-server.zip \
- && mv /go-server-<%= version %> /go-server \
+ && mv /go-server-<%= image.vars['gocd_version'] %> /go-server \
  && tar czf /go-server.tar.gz go-server -C /
 
 FROM bcit/alpine:3.9
-
-LABEL maintainer="<%= maintainer %>" \
-      gocd.version="<%= version %>" \
-      description="GoCD server based on alpine version 3.9" \
-      url="https://www.gocd.org" \
-      gocd.full.version="<%= full_version %>"
+<%= snippet('labels', binding) -%>
 
 ENV RUNUSER go
-ENV FULLVERSION <%= full_version %>
+ENV FULLVERSION <%= image.vars['gocd_full_version'] %>
 
 # force encoding
 ENV LANG en_US.UTF-8
